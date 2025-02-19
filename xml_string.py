@@ -46,3 +46,51 @@ xml_file_1= '''<?xml version="1.0" encoding="UTF-8"?>
     <sequenceFlow id="Flow_0kr7le2" sourceRef="Activity_1c1dgpx" targetRef="Event_08s7npr" />
   </process>
   </definitions>'''
+
+
+xml_file_2 ='''<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_0sllhi0" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.1.1">
+  <bpmn:process id="Process_1a9mcyv" isExecutable="false">
+    <bpmn:startEvent id="StartEvent_1ncsvoq" name="start with idea">
+      <bpmn:outgoing>Flow_1rqh8d7</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Activity_0abxoyh" name="make familiar with BPMN">
+      <bpmn:incoming>Flow_1rqh8d7</bpmn:incoming>
+      <bpmn:outgoing>Flow_0wb1hk4</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_1rqh8d7" sourceRef="StartEvent_1ncsvoq" targetRef="Activity_0abxoyh" />
+    <bpmn:task id="Activity_0haydyo" name="check github for similar projects">
+      <bpmn:incoming>Flow_0wb1hk4</bpmn:incoming>
+      <bpmn:outgoing>Flow_0c0dnd3</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_0wb1hk4" sourceRef="Activity_0abxoyh" targetRef="Activity_0haydyo" />
+    <bpmn:exclusiveGateway id="Gateway_1ksauni" name="similar projects found?">
+      <bpmn:incoming>Flow_0c0dnd3</bpmn:incoming>
+      <bpmn:outgoing>Flow_134bvrw</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1t4qaxr</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0c0dnd3" sourceRef="Activity_0haydyo" targetRef="Gateway_1ksauni" />
+    <bpmn:task id="Activity_1c8brpz" name="code own project">
+      <bpmn:incoming>Flow_134bvrw</bpmn:incoming>
+      <bpmn:outgoing>Flow_1hi6vy4</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_134bvrw" name="no" sourceRef="Gateway_1ksauni" targetRef="Activity_1c8brpz" />
+    <bpmn:task id="Activity_1kyc9go" name="reuse existing proejct">
+      <bpmn:incoming>Flow_1t4qaxr</bpmn:incoming>
+      <bpmn:outgoing>Flow_07od1co</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_1t4qaxr" name="yes" sourceRef="Gateway_1ksauni" targetRef="Activity_1kyc9go" />
+    <bpmn:task id="Activity_00u5xrs" name="upload project progress on github">
+      <bpmn:incoming>Flow_1hi6vy4</bpmn:incoming>
+      <bpmn:outgoing>Flow_1fwouge</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="Flow_1hi6vy4" sourceRef="Activity_1c8brpz" targetRef="Activity_00u5xrs" />
+    <bpmn:endEvent id="Event_0a3c3hu" name="project done">
+      <bpmn:incoming>Flow_1fwouge</bpmn:incoming>
+      <bpmn:incoming>Flow_07od1co</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1fwouge" sourceRef="Activity_00u5xrs" targetRef="Event_0a3c3hu" />
+    <bpmn:sequenceFlow id="Flow_07od1co" sourceRef="Activity_1kyc9go" targetRef="Event_0a3c3hu" />
+  </bpmn:process>
+</bpmn:definitions>
+'''

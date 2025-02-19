@@ -26,12 +26,12 @@ def xml_position_appender(elements_not_in_tree, input_xml, output_name):
             )
     xml_fragments += '</bpmndi:BPMNPlane>\n'
     xml_fragments += '</bpmndi:BPMNDiagram>'
-    insertion_point = input_xml.find("</process>")
+    insertion_point = input_xml.find("</bpmn:process>")
     if insertion_point != -1:
         print("inserting to xml file")
-        new_xml = (input_xml[:insertion_point + len("</process>")] +
+        new_xml = (input_xml[:insertion_point + len("</bpmn:process>")] +
                 xml_fragments +
-                input_xml[insertion_point + len("</process>"):])
+                input_xml[insertion_point + len("</bpmn:process>"):])
 
     with open(f"{output_name}.xml", "w") as file:
         file.write(new_xml)
