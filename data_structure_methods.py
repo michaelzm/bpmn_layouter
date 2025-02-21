@@ -1,18 +1,20 @@
 from copy import deepcopy
 
-def find_start_node_id(elements_not_in_tree):
-    for elem in elements_not_in_tree:
+def find_start_node_id(elements_linked):
+    for elem in elements_linked:
         print(elem)
-        if "type" in elements_not_in_tree[elem].data and elements_not_in_tree[elem].data["type"] == "startEvent":
+        if "type" in elements_linked[elem].data and elements_linked[elem].data["type"] == "startEvent":
             print("start_element_found", elem)
             return  elem
 
-def parse_tree(elements_not_in_tree):
+def parse_tree(elements_linked):
     print("init tree and set top node to start node")
-    top_node = elements_not_in_tree[find_start_node_id(elements_not_in_tree)]
-    top_node.set_depth(0)
+    top_node = elements_linked[find_start_node_id(elements_linked)]
 
-    fully_tracked_nodes = []
+    #init top node with depth = 0
+    # depth = "x"
+    # shift = "y"
+    top_node.set_depth(0)
     #start with top node
     untracked_nodes = [top_node]
     while len(untracked_nodes) > 0:
@@ -28,13 +30,16 @@ def parse_tree(elements_not_in_tree):
                 print("existing outgoing nodes ",current_node.data["outgoing"])
                 untracked_childs = [i for i in current_node.data["outgoing"] if i not in child_nodes]
                 print("untracked childs", untracked_childs)
-                child_node = elements_not_in_tree[untracked_childs[0]]
+                child_node = elements_linked[untracked_childs[0]]
                 child_node.add_parent(current_node)
                 child_node.set_depth(current_node.depth+1)
-                max_shift_on_depth = len([i for i in elements_not_in_tree if elements_not_in_tree[i].depth == current_node.depth+1]) -1
+                # shift / y is set based on parent node shift and max elements at depth registered
+                # for every iteration, a element in the "tree" gets udpated with the according shift. 
+                # As the elements on the same depth are added ("one element -> one shift") iteratively
+                # new nodes get assigned the next higher shift as well
+                max_shift_on_depth = len([i for i in elements_linked if elements_linked[i].depth == current_node.depth+1]) -1
                 new_shift = max(current_node.shift, max_shift_on_depth)
                 child_node.set_shift(new_shift)
-
                 current_node.child_nodes.append(child_node)
                 untracked_nodes.append(child_node)
                 print("missing child")
@@ -44,36 +49,36 @@ def parse_tree(elements_not_in_tree):
                 untracked_nodes.pop(0)
 
     #elements not in tree now have linked information
-    return elements_not_in_tree
+    return elements_linked
 
-def find_preceeding_element_position(lookup_placement, elements_not_in_tree, elem_id):
+def find_preceeding_element_position(lookup_placement, elements_linked, elem_id):
     print("finding preceeding element max width plus x")
-    incoming_flows = elements_not_in_tree[elem_id].data["incoming"]
+    incoming_flows = elements_linked[elem_id].data["incoming"]
     preceeding_elements = []
     if len(incoming_flows) == 0:
         return lookup_placement["initial-spacing-left"]
     else:
         for inc_flow_id in incoming_flows:
-            preceeding_elements += elements_not_in_tree[inc_flow_id].data["incoming"]
+            preceeding_elements += elements_linked[inc_flow_id].data["incoming"]
     #find max x + width
     x_plus_width = []
     print("all preceeding elements ", preceeding_elements)
     for prec_elem in preceeding_elements:
-        x_plus_width.append(elements_not_in_tree[prec_elem].position["x"] + elements_not_in_tree[prec_elem].position["width"])
+        x_plus_width.append(elements_linked[prec_elem].position["x"] + elements_linked[prec_elem].position["width"])
     print(preceeding_elements)
     return max(x_plus_width)
 
-def find_edge_to_target_connection(elements_not_in_tree, lookup_placement, edge_id, direction):
+def find_edge_to_target_connection(elements_linked, lookup_placement, edge_id, direction):
     #simple case, same shift:
     # incoming defines starting point
     # outgoing defines end point
     print("finding preceeding element max width plus x")
-    target_element_id = elements_not_in_tree[edge_id].data[direction][0]
-    target_element = elements_not_in_tree[target_element_id]
+    target_element_id = elements_linked[edge_id].data[direction][0]
+    target_element = elements_linked[target_element_id]
     
     target_edge_shift = target_element.shift
     #shift, that is level, of edge
-    source_edege_shift = elements_not_in_tree[edge_id].shift
+    source_edege_shift = elements_linked[edge_id].shift
     #if edge and target are on same shift, use single connector
     edge_connections = []
     if source_edege_shift == target_edge_shift:
@@ -115,11 +120,11 @@ def find_edge_to_target_connection(elements_not_in_tree, lookup_placement, edge_
 
     return edge_connections
 
-def init_element_positions(lookup_placement, elements_not_in_tree):
+def init_element_positions(lookup_placement, elements_linked):
     #for positioning, traverse based on depth
     id_depth_mapping = {}
-    for elem_id in elements_not_in_tree:
-        depth = elements_not_in_tree[elem_id].depth
+    for elem_id in elements_linked:
+        depth = elements_linked[elem_id].depth
         if depth not in id_depth_mapping:
             id_depth_mapping[depth] = [elem_id]
         else:
@@ -128,24 +133,24 @@ def init_element_positions(lookup_placement, elements_not_in_tree):
     for depth in sorted(id_depth_mapping.keys()): 
         for elem_id in id_depth_mapping[depth]:
             print(elem_id)
-            if "flow" not in elements_not_in_tree[elem_id].data["type"]:
+            if "flow" not in elements_linked[elem_id].data["type"]:
                 #add width and height
-                elements_not_in_tree[elem_id].position = deepcopy(lookup_placement[elements_not_in_tree[elem_id].data["type"]])
+                elements_linked[elem_id].position = deepcopy(lookup_placement[elements_linked[elem_id].data["type"]])
                 #grab preceeding element
-                previous_element_x = find_preceeding_element_position(lookup_placement, elements_not_in_tree, elem_id)
+                previous_element_x = find_preceeding_element_position(lookup_placement, elements_linked, elem_id)
                 print("previous element placed at ", previous_element_x)
-                elements_not_in_tree[elem_id].position["x"] = previous_element_x + lookup_placement["spacing-left"]
-                half_height_elem = elements_not_in_tree[elem_id].position["height"] / 2
-                elements_not_in_tree[elem_id].position["y"] = elements_not_in_tree[elem_id].shift * lookup_placement["y-line-spacing"] - half_height_elem + lookup_placement["initial-spacing-top"]
-                print("current element placement at ", elem_id, elements_not_in_tree[elem_id].position)
+                elements_linked[elem_id].position["x"] = previous_element_x + lookup_placement["spacing-left"]
+                half_height_elem = elements_linked[elem_id].position["height"] / 2
+                elements_linked[elem_id].position["y"] = elements_linked[elem_id].shift * lookup_placement["y-line-spacing"] - half_height_elem + lookup_placement["initial-spacing-top"]
+                print("current element placement at ", elem_id, elements_linked[elem_id].position)
     ## init flow positions
-    for elem_id in elements_not_in_tree:
+    for elem_id in elements_linked:
         print(elem_id)
-        if "flow" in elements_not_in_tree[elem_id].data["type"]:
+        if "flow" in elements_linked[elem_id].data["type"]:
             #incoming edge
-            incoming_edges = find_edge_to_target_connection(elements_not_in_tree, lookup_placement, elem_id, "incoming")
-            outgoing_edges = find_edge_to_target_connection(elements_not_in_tree, lookup_placement, elem_id, "outgoing")
+            incoming_edges = find_edge_to_target_connection(elements_linked, lookup_placement, elem_id, "incoming")
+            outgoing_edges = find_edge_to_target_connection(elements_linked, lookup_placement, elem_id, "outgoing")
             #add width and height
-            elements_not_in_tree[elem_id].position = incoming_edges + outgoing_edges
+            elements_linked[elem_id].position = incoming_edges + outgoing_edges
     
-    return elements_not_in_tree
+    return elements_linked

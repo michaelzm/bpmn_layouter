@@ -24,14 +24,3 @@ class Node:
 
     def add_parent(self, parent):
         self.parents.append(parent)
-
-class Tree:
-    def __init__(self):
-        print("created tree")
-        self.top_node = None
-
-    def set_top_node(self, node):
-        self.top_node = node
-    
-    def get_top_node(self):
-        return self.top_node
