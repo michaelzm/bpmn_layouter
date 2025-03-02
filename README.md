@@ -1,15 +1,15 @@
 # BPMN Layouter
 
 ## Overview
-BPMN Layouter is a Python-based tool that processes BPMN XML files, converts them into structured JSON, and appends position data to the elements.
+BPMN Layouter is a Python-based tool that processes BPMN data in JSON format, structures it, computes positional data for elements, and writes it back to a BPMN XML file.
 
 ## Features
-- Converts BPMN XML to structured JSON
-- Flattens JSON into a dictionary for easy manipulation
-- Builds a tree structure of BPMN elements
-- Computes and assigns element positions
-- Writes back positional data to XML
-- Encapsulated in a `BpmnLayout` class for simple usage
+- Parses BPMN data from JSON format
+- Generates incoming and outgoing flow connections for elements
+- Converts structured BPMN JSON into a flattened dictionary
+- Builds a tree representation of BPMN elements
+- Computes and assigns positional data to elements
+- Appends positional data to BPMN XML
 
 ## Installation
 Ensure you have Python installed. Then, clone the repository and install the required dependencies:
@@ -25,22 +25,52 @@ pip install -r requirements.txt
 
 ## Usage
 ### Running the Code
-To process a BPMN XML file and generate a positioned file, use the `BpmnLayout` class as follows:
+To process BPMN JSON data and generate a BPMN XML file with positional data, use the following approach:
 
 ```python
-from xml_string import xml_file_3
-from bpmn_layouter import BpmnLayout
+import json
+from input_data import json_string_1
+from xml_generator import json_to_flattened_dict, generate_flows_based_on_elements
+from data_structure_methods import parse_tree, init_element_positions
+from data_structures import Node
 
-# Instantiate and generate layout
-bpmn_layout_generator = BpmnLayout()
-bpmn_layout_generator.generate_bpmn_layout(xml_input_file=xml_file_3, xml_output_name="generated_xml_file")
+# Convert single quotes to double quotes to make it valid JSON
+data = json_string_1.replace("'", '"')
+
+# Parse JSON
+parsed_json = json.loads(data)
+
+# Initialize flow connections
+for elem in parsed_json["elements"]:
+    elem["outgoing_flows"] = []
+    elem["incoming_flows"] = []
+
+# Generate flow mappings
+parsed_json = generate_flows_based_on_elements(parsed_json)
+
+# Convert structured JSON to a flattened dictionary
+flattened_dict = json_to_flattened_dict(parsed_json)
+
+# Convert elements to nodes
+elements_as_nodes = {element_id: Node(flattened_dict[element_id]) for element_id in flattened_dict}
+
+# Parse the BPMN tree structure
+elements_linked = parse_tree(elements_linked=elements_as_nodes)
+
+# Compute positional data
+elements_linked, id_depth_mapping = init_element_positions(elements_linked)
+
+# Generate XML with positional data
+from xml_generator import xml_position_appender, generate_top_bpmn_xml
+top_xml_part = generate_top_bpmn_xml(elements_linked)
+xml_position_appender(elements_linked, top_xml_part, "generated_bpmn_file.xml")
 ```
 
 ### Input
-- **BPMN XML File:** This should be stored in `xml_string.py` as `xml_file_3`.
+- **BPMN JSON Data:** The input data is provided as a JSON string stored in `input_data.py` as `json_string_1`.
 
 ### Output
-- **generated_xml_file.xml**: The processed XML file with added positional data.
+- **generated_bpmn_file.xml**: The BPMN XML file generated with computed positional data.
 
 ## Contributing
 Feel free to fork the repository and submit pull requests!
