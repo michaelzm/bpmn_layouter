@@ -1,8 +1,8 @@
-from bpmn_to_json_parser import bpmn_to_json, json_to_flattened_dict
+from xml_generator import bpmn_to_json, json_to_flattened_dict
 from data_structures import Node
 from data_structure_methods import parse_tree, init_element_positions
 from placement_config import lookup_placement
-from xml_position_appender import xml_position_appender
+from xml_generator import xml_position_appender
 
 class BpmnLayout:
     def __init__(self):
