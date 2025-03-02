@@ -5,6 +5,7 @@ lookup_placement["initial-spacing-top"] = 150
 lookup_placement["spacing-left"] = 50
 #y line spacing defines the grid y axes spacing
 lookup_placement["y-line-spacing"] = 100
+lookup_placement["x-line-spacing"] = 75
 lookup_placement["task"] = {"width": 100, "height":80}
 lookup_placement["startEvent"] = {"width": 36, "height":36}
 lookup_placement["endEvent"] = {"width": 36, "height":36}

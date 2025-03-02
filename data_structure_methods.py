@@ -1,4 +1,5 @@
 from copy import deepcopy
+from placement_config import lookup_placement
 
 def find_start_node_id(elements_linked):
     for elem in elements_linked:
@@ -10,7 +11,9 @@ def find_start_node_id(elements_linked):
 def parse_tree(elements_linked):
     print("init tree and set top node to start node")
     top_node = elements_linked[find_start_node_id(elements_linked)]
-
+    top_node.shift = 0
+    top_node.depth = 0
+    print("top node identified as ", top_node.data)
     #init top node with depth = 0
     # depth = "x"
     # shift = "y"
@@ -18,35 +21,45 @@ def parse_tree(elements_linked):
     #start with top node
     untracked_nodes = [top_node]
     while len(untracked_nodes) > 0:
-        print(untracked_nodes, " open to be tracked")
-        current_node = untracked_nodes[0]
+        print("\n")
+        print("all untracked parent nodes ", [i.id for i in untracked_nodes])
+        print(len(untracked_nodes), " open to be tracked")
+        ## sort based on lowest shift 
+        current_node = sorted(untracked_nodes, key=lambda node: node.shift)[0]
         print("current node set to ", current_node.id)
         #pessimistic approach, current node always has next node in data
         all_childs_tracked = False
         while not all_childs_tracked:
-            child_nodes = [i.id for i in current_node.child_nodes]
+
+            child_nodes = [child.id  for child in current_node.child_nodes]
             if len(child_nodes) < len(current_node.data["outgoing"]):
                 print("captured child nodes ",child_nodes)
-                print("existing outgoing nodes ",current_node.data["outgoing"])
                 untracked_childs = [i for i in current_node.data["outgoing"] if i not in child_nodes]
                 print("untracked childs", untracked_childs)
                 child_node = elements_linked[untracked_childs[0]]
+                print("child node for op", child_node.id)
+                print("depth of current node realtive to current child node ",current_node.depth, " ", child_node.depth)
                 child_node.add_parent(current_node)
-                child_node.set_depth(current_node.depth+1)
+                child_node.update_depth()
+                
                 # shift / y is set based on parent node shift and max elements at depth registered
                 # for every iteration, a element in the "tree" gets udpated with the according shift. 
                 # As the elements on the same depth are added ("one element -> one shift") iteratively
                 # new nodes get assigned the next higher shift as well
-                max_shift_on_depth = len([i for i in elements_linked if elements_linked[i].depth == current_node.depth+1]) -1
-                new_shift = max(current_node.shift, max_shift_on_depth)
-                child_node.set_shift(new_shift)
+                child_node.update_shift(elements_linked)
+                
+                #print("try setting shift to max of current node and placed nodes as ",new_shift)
+                print(f"adding the child {child_node.id} to all untracked nodes")
                 current_node.child_nodes.append(child_node)
                 untracked_nodes.append(child_node)
-                print("missing child")
             else:
                 print("all child nodes are tracked")
                 all_childs_tracked = True
-                untracked_nodes.pop(0)
+                print("stack of untracked parent nodes before remove", [i.id for i in untracked_nodes])
+                print("removing current node id after being processed: ",current_node.id)
+                untracked_nodes.remove(current_node)
+                print("stack of untracked parent nodes after remove", [i.id for i in untracked_nodes])
+
 
     #elements not in tree now have linked information
     return elements_linked
@@ -120,7 +133,7 @@ def find_edge_to_target_connection(elements_linked, lookup_placement, edge_id, d
 
     return edge_connections
 
-def init_element_positions(lookup_placement, elements_linked):
+def init_element_positions(elements_linked):
     #for positioning, traverse based on depth
     id_depth_mapping = {}
     for elem_id in elements_linked:
@@ -128,18 +141,18 @@ def init_element_positions(lookup_placement, elements_linked):
         if depth not in id_depth_mapping:
             id_depth_mapping[depth] = [elem_id]
         else:
-            id_depth_mapping[depth].append(elem_id) 
+            id_depth_mapping[depth].append(elem_id)
+    id_depth_mapping = dict(sorted(id_depth_mapping.items()))
+
     print("finished depth mapping ", id_depth_mapping)
-    for depth in sorted(id_depth_mapping.keys()): 
+    for depth in id_depth_mapping.keys():
+        print("\nsettings positions for elements on depth ", depth)
         for elem_id in id_depth_mapping[depth]:
             print(elem_id)
             if "flow" not in elements_linked[elem_id].data["type"]:
                 #add width and height
                 elements_linked[elem_id].position = deepcopy(lookup_placement[elements_linked[elem_id].data["type"]])
-                #grab preceeding element
-                previous_element_x = find_preceeding_element_position(lookup_placement, elements_linked, elem_id)
-                print("previous element placed at ", previous_element_x)
-                elements_linked[elem_id].position["x"] = previous_element_x + lookup_placement["spacing-left"]
+                elements_linked[elem_id].position["x"] = depth*lookup_placement["x-line-spacing"] + lookup_placement["spacing-left"]
                 half_height_elem = elements_linked[elem_id].position["height"] / 2
                 elements_linked[elem_id].position["y"] = elements_linked[elem_id].shift * lookup_placement["y-line-spacing"] - half_height_elem + lookup_placement["initial-spacing-top"]
                 print("current element placement at ", elem_id, elements_linked[elem_id].position)
@@ -153,4 +166,4 @@ def init_element_positions(lookup_placement, elements_linked):
             #add width and height
             elements_linked[elem_id].position = incoming_edges + outgoing_edges
     
-    return elements_linked
+    return elements_linked, id_depth_mapping
