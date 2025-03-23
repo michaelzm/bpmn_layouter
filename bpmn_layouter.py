@@ -17,5 +17,5 @@ class BpmnLayout:
 
         elements_linked = parse_tree(elements_linked=elements_as_nodes)
         elements_linked = init_element_positions(lookup_placement, elements_linked)
-
+        print("outputting file as file name ",xml_output_name)
         xml_position_appender(elements_linked, xml_input_file, xml_output_name)
