@@ -2,7 +2,6 @@ from copy import deepcopy
 from placement_config import lookup_placement
 from data_structures import Node, Edge
 import json
-import numpy as np
 import pydot
 import re
 
@@ -33,8 +32,6 @@ def assign_shift_and_depth(parsed_json):
         new_node = Node(n["id"], n["label"])
         new_node.set_type(n["type"])
         elements_as_data_struc[n["id"]] = new_node
-    
-
 
     # Add edges
     for f in parsed_json["flows"]:
@@ -99,8 +96,9 @@ def assign_shift_and_depth(parsed_json):
     for e in node_positions:
         all_x.append(node_positions[e][0])
         all_y.append(node_positions[e][1])
-    all_x = sorted(np.unique(all_x))
-    all_y = sorted(np.unique(all_y))
+
+    all_x = sorted(set(all_x))
+    all_y = sorted(set(all_y))
 
     float_mapping_x = {}
     for i, x in enumerate(all_x):
