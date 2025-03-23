@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 import json
+import os
 
 def bpmn_to_json(xml_data):
     ns = {'bpmn': 'http://www.omg.org/spec/BPMN/20100524/MODEL'}
@@ -64,7 +65,8 @@ def generate_flows_based_on_elements(parsed_json):
             flows_created.append(new_flow)
             for elem_target in parsed_json["elements"]:
                 if elem_target["id"] == elem_id_to_convert:
-                    elem_target["incoming"].remove(current_elem_id)
+                    if current_elem_id in elem_target:
+                        elem_target["incoming"].remove(current_elem_id)
                     elem_target["incoming_flows"].append(new_flow["id"])
 
     for elem in parsed_json["elements"]:
@@ -121,12 +123,11 @@ def generate_top_bpmn_xml(nodes):
 
     # -- 3) Emit one block for each node based on its 'type' --
     for node_key, node_obj in nodes.items():
-        d = node_obj.data
-        node_id = d["id"]
-        node_type = d["type"]
-        label = d.get("label", "")
-        incoming_flows = d.get("incoming", [])
-        outgoing_flows = d.get("outgoing", [])
+        node_id = node_obj.id
+        node_type = node_obj.type
+        label = node_obj.label
+        incoming_flows = node_obj.incoming
+        outgoing_flows = node_obj.outgoing
 
         # Decide which BPMN element tag to use
         if node_type == "startEvent":
@@ -156,7 +157,7 @@ def generate_top_bpmn_xml(nodes):
                 xml_output.append(f'      <bpmn:outgoing>{out}</bpmn:outgoing>')
             xml_output.append('    </bpmn:exclusiveGateway>')
 
-        elif node_type == "task":
+        elif "TASK" in node_type.upper():
             # By default, treat as a task (e.g., userTask, scriptTask, or any generic activity).
             # You could extend this with other BPMN types if needed.
             xml_output.append(f'    <bpmn:task id="{node_id}" name="{label}">')
@@ -165,7 +166,8 @@ def generate_top_bpmn_xml(nodes):
             for out in outgoing_flows:
                 xml_output.append(f'      <bpmn:outgoing>{out}</bpmn:outgoing>')
             xml_output.append('    </bpmn:task>')
-        elif node_type == "flow":
+        
+        elif node_type == "edge":
             if len(incoming_flows) > 0:
                 xml_output.append(f'    <bpmn:sequenceFlow id="{node_id}" name="{label}" sourceRef="{incoming_flows[0]}" targetRef="{outgoing_flows[0]}" />')
         
@@ -187,8 +189,8 @@ def xml_position_appender(elements_linked, input_xml, output_name):
 
     for elem_id in elements_linked:
         print(elem_id)
-        type = elements_linked[elem_id].data["type"]
-        if type == "flow":
+        type = elements_linked[elem_id].type
+        if type == "edge":
             xml_fragments += f'<bpmndi:BPMNEdge id="{elem_id}_di" bpmnElement="{elem_id}">\n'
             for breakpoint in elements_linked[elem_id].position:
                 print(breakpoint)
@@ -211,6 +213,11 @@ def xml_position_appender(elements_linked, input_xml, output_name):
         new_xml = (input_xml[:insertion_point + len("</bpmn:process>")] +
                 xml_fragments +
                 input_xml[insertion_point + len("</bpmn:process>"):])
+    print("outputting file as ",output_name)
 
-    with open(f"{output_name}.xml", "w") as file:
+    file_name = f"outputs/{output_name}.xml"
+    if os.path.exists(file_name):
+        os.remove(file_name)
+    
+    with open(file_name, "w") as file:
         file.write(new_xml)
